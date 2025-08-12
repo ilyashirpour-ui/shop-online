@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>فروشگاه آنلاین</title>
+<style>
+  body {
+    font-family: Tahoma, sans-serif;
+    margin:0; padding:0;
+    direction: rtl;
+    background: #f5f5f5;
+  }
+  header {
+    background: #333;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+  }
+  .menu-btn {
+    font-size: 24px;
+    cursor: pointer;
+  }
+  .login-signup {
+    cursor: pointer;
+  }
+  /* منوی کناری */
+  #side-menu {
+    width: 250px;
+    background: white;
+    position: fixed;
+    top: 0; left: -250px;
+    height: 100%;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    z-index: 1000;
+  }
+  #side-menu.open {
+    left: 0;
+  }
+  #side-menu h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+  }
+  #side-menu ul {
+    list-style: none;
+    padding: 0;
+  }
+  #side-menu ul li {
+    padding: 8px 0;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+  }
+  #side-menu ul li:hover {
+    background: #eee;
+  }
+
+  main {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0 20px 50px;
+  }
+  .products {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  .product-card {
+    background: white;
+    border-radius: 6px;
+    padding: 15px;
+    width: calc(33.33% - 10px);
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    cursor: pointer;
+    position: relative;
+  }
+  .product-card img {
+    max-width: 100%;
+    height: 120px;
+    object-fit: contain;
+    margin-bottom: 10px;
+  }
+  .product-card h4 {
+    margin: 5px 0;
+  }
+  .add-to-cart {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    display: none;
+  }
+  .product-card.show-btn .add-to-cart {
+    display: inline-block;
+  }
+
+  /* فرم افزودن محصول */
+  #add-product-form {
+    background: white;
+    padding: 20px;
+    margin-top: 30px;
+    border-radius: 6px;
+    box-shadow: 0 0 7px rgba(0,0,0,0.1);
+  }
+  #add-product-form input, #add-product-form select, #add-product-form textarea {
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  #add-product-form button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+
+  /* سبد خرید */
+  #cart {
+    position: fixed;
+    top: 60px;
+    right: 0;
+    background: white;
+    width: 280px;
+    max-height: 400px;
+    overflow-y: auto;
+    box-shadow: -2px 2px 7px rgba(0,0,0,0.2);
+    padding: 15px;
+    display: none;
+    z-index: 1100;
+  }
+  #cart h3 {
+    margin-top: 0;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+  }
+  #cart ul {
+    list-style: none;
+    padding: 0;
+  }
+  #cart ul li {
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+  }
+  #cart ul li span {
+    display: inline-block;
+    margin-left: 10px;
+  }
+  #cart-close {
+    cursor: pointer;
+    color: red;
+    float: left;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="menu-btn" id="menu-btn">&#9776;</div>
+  <div class="login-signup" id="login-signup">Log In / Sign Up</div>
+</header>
+
+<nav id="side-menu">
+  <h3>دسته‌بندی‌ها</h3>
+  <ul>
+    <li data-cat="دیجیتال">دیجیتال</li>
+    <li data-cat="لباس">لباس</li>
+    <li data-cat="زیورالات">زیورالات</li>
+    <li data-cat="اکسسوری">اکسسوری</li>
+    <li data-cat="فروش ویژه">فروش ویژه</li>
+    <li data-cat="ساعت">ساعت</li>
+    <li id="open-cart">سبد خرید</li>
+  </ul>
+</nav>
+
+<div id="cart">
+  <span id="cart-close">✖</span>
+  <h3>سبد خرید</h3>
+  <ul id="cart-items">
+    <li>سبد خرید شما خالی است.</li>
+  </ul>
+</div>
+
+<main>
+  <h2>محصولات</h2>
+  <div class="products" id="products"></div>
+
+  <form id="add-product-form">
+    <h3>افزودن محصول جدید</h3>
+    <input type="text" id="prod-name" placeholder="نام محصول" required />
+    <input type="number" id="prod-price" placeholder="قیمت (تومان)" required />
+    <input type="text" id="prod-img" placeholder="آدرس عکس محصول (URL)" required />
+    <select id="prod-category" required>
+      <option value="" disabled selected>دسته‌بندی</option>
+      <option value="دیجیتال">دیجیتال</option>
+      <option value="لباس">لباس</option>
+      <option value="زیورالات">زیورالات</option>
+      <option value="اکسسوری">اکسسوری</option>
+      <option value="فروش ویژه">فروش ویژه</option>
+      <option value="ساعت">ساعت</option>
+    </select>
+    <textarea id="prod-desc" placeholder="توضیحات محصول"></textarea>
+    <button type="submit">افزودن محصول</button>
+  </form>
+</main>
+
+<script>
+  const menuBtn = document.getElementById('menu-btn');
+  const sideMenu = document.getElementById('side-menu');
+  const productsDiv = document.getElementById('products');
+  const addForm = document.getElementById('add-product-form');
+  const cart = document.getElementById('cart');
+  const cartItemsUl = document.getElementById('cart-items');
+  const openCartBtn = document.getElementById('open-cart');
+  const cartCloseBtn = document.getElementById('cart-close');
+
+  let products = [];
+  let cartItems = [];
+
+  function renderProducts(filterCategory = null) {
+    productsDiv.innerHTML = '';
+    let filtered = products;
+    if(filterCategory) {
+      filtered = products.filter(p => p.category === filterCategory);
+    }
+    if(filtered.length === 0) {
+      productsDiv.innerHTML = '<p>محصولی یافت نشد.</p>';
+      return;
+    }
+    filtered.forEach((p, index) => {
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML = `
+        <img src="${p.img}" alt="${p.name}" />
+        <h4>${p.name}</h4>
+        <p>${p.desc}</p>
+        <p><b>قیمت:</b> ${p.price} تومان</p>
+        <button class="add-to-cart">افزودن به سبد خرید</button>
+      `;
+      // نمایش دکمه افزودن به سبد خرید فقط وقتی کلیک میشه روی محصول
+      card.addEventListener('click', e => {
+        // اگر روی دکمه بود اضافه کن
+        if(e.target.classList.contains('add-to-cart')) {
+          addToCart(index);
+          return;
+        }
+        // بقیه مواقع فقط دکمه رو نشون بده
+        card.classList.toggle('show-btn');
+      });
+      productsDiv.appendChild(card);
+    });
+  }
+
+  function addToCart(productIndex) {
+    const product = products[productIndex];
+    const found = cartItems.find(item => item.name === product.name);
+    if(found) {
+      found.count++;
+    } else {
+      cartItems.push({...product, count:1});
+    }
+    alert(`محصول "${product.name}" به سبد خرید اضافه شد.`);
+    renderCart();
+  }
+
+  function renderCart() {
+    cartItemsUl.innerHTML = '';
+    if(cartItems.length === 0) {
+      cartItemsUl.innerHTML = '<li>سبد خرید شما خالی است.</li>';
+      return;
+    }
+    cartItems.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = `${item.name} - تعداد: ${item.count} - قیمت واحد: ${item.price} تومان`;
+      cartItemsUl.appendChild(li);
+    });
+  }
+
+  menuBtn.onclick = () => {
+    sideMenu.classList.toggle('open');
+  };
+
+  // فیلتر بر اساس دسته‌بندی
+  sideMenu.querySelectorAll('ul li').forEach(li => {
+    if(li.id !== 'open-cart') {
+      li.addEventListener('click', () => {
+        renderProducts(li.getAttribute('data-cat'));
+        sideMenu.classList.remove('open');
+      });
+    }
+  });
+
+  // باز کردن و بستن سبد خرید
+  openCartBtn.onclick = () => {
+    cart.style.display = 'block';
+    sideMenu.classList.remove('open');
+  };
+  cartCloseBtn.onclick = () => {
+    cart.style.display = 'none';
+  };
+
+  addForm.onsubmit = e => {
+    e.preventDefault();
+    const name = document.getElementById('prod-name').value.trim();
+    const price = parseInt(document.getElementById('prod-price').value);
+    const img = document.getElementById('prod-img').value.trim();
+    const category = document.getElementById('prod-category').value;
+    const desc = document.getElementById('prod-desc').value.trim();
+
+    if(!name || !price || !img || !category) {
+      alert('لطفاً تمام فیلدهای ضروری را پر کنید.');
+      return;
+    }
+
+    products.push({name, price, img, category, desc});
+    renderProducts();
+    addForm.reset();
+    alert('محصول با موفقیت اضافه شد.');
+  };
+
+  // محصولات نمونه اولیه
+  products = [
+    {name: 'هدفون بی‌سیم', price: 1200000, img: 'https://cdn-icons-png.flaticon.com/512/727/727240.png', category: 'دیجیتال', desc: 'هدفون بلوتوثی با کیفیت بالا'},
+    {name: 'پیراهن مردانه', price: 450000, img: 'https://cdn-icons-png.flaticon.com/512/892/892458.png', category: 'لباس', desc: 'پیراهن کتان با رنگ آبی'},
+    {name: 'گردنبند نقره', price: 650000, img: 'https://cdn-icons-png.flaticon.com/512/1995/1995526.png', category: 'زیورالات', desc: 'گردنبند شیک و زیبا'},
+  ];
+  renderProducts();
+</script>
+
+</body>
+</html>
